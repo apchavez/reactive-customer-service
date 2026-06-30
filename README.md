@@ -13,8 +13,8 @@ Fullstack monorepo with a reactive **Spring Boot WebFlux** backend following **H
 
 ```
 ├── api/        Spring Boot WebFlux backend (Java 21, Hexagonal Architecture)
+│   └── k8s/    Kubernetes manifests (api + kafka + redis + supporting services)
 ├── web/        Angular 21 frontend (Angular Material, standalone components)
-├── k8s/        Kubernetes manifests (api + kafka + supporting services)
 ├── docker/     PostgreSQL init script
 └── docker-compose.yml
 ```
@@ -158,6 +158,7 @@ cd web && npm test
 
 | Type | Class | Description |
 |---|---|---|
+| Component unit | `AppSpec` | Root app creation and title |
 | Service unit | `CustomerServiceSpec` | HttpClient calls, request/response mapping |
 | Component unit | `CustomerListComponentSpec` | Table rendering, loading state |
 | Component unit | `CustomerFormComponentSpec` | Form validation, create/edit modes |
@@ -189,6 +190,7 @@ Manifests in `api/k8s/`:
 | `service.yaml` | ClusterIP on port 80 |
 | `ingress.yaml` | NGINX Ingress at `customer-service.local` |
 | `kafka.yaml` | Single-node Kafka (Bitnami KRaft, no Zookeeper) |
+| `redis.yaml` | Redis deployment for reactive rate limiting |
 
 ---
 
