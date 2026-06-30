@@ -5,6 +5,7 @@ import com.apchavez.customers.infrastructure.persistence.CustomerR2dbcRepository
 import com.apchavez.customers.infrastructure.web.dto.CustomerRequestDTO;
 import com.apchavez.customers.infrastructure.web.dto.CustomerResponseDTO;
 import com.apchavez.customers.infrastructure.web.dto.CustomerUpdateRequestDTO;
+import com.apchavez.customers.infrastructure.web.dto.PageResponse;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -73,6 +74,7 @@ class CustomerControllerIntegrationTest {
     // ── GET /api/v1/customers/active ─────────────────────────────────────────
 
     @Test
+    @SuppressWarnings("unchecked")
     void listActiveCustomers_shouldReturn200_withOnlyActiveCustomers() {
         r2dbcRepository.save(new CustomerEntity(null, "Carlos", "Lopez", "ACTIVE", 22)).block();
         r2dbcRepository.save(new CustomerEntity(null, "Maria", "Gomez", "INACTIVE", 20)).block();
@@ -82,23 +84,46 @@ class CustomerControllerIntegrationTest {
                 .uri("/api/v1/customers/active")
                 .exchange()
                 .expectStatus().isOk()
-                .expectBodyList(CustomerResponseDTO.class)
-                .value(list -> {
-                    assertThat(list).hasSize(2);
-                    assertThat(list).allMatch(c -> "ACTIVE".equals(c.estado()));
+                .expectBody(PageResponse.class)
+                .value(page -> {
+                    assertThat(page.totalElements()).isEqualTo(2L);
+                    assertThat(page.content()).hasSize(2);
+                    assertThat(page.page()).isEqualTo(0);
+                    assertThat(page.size()).isEqualTo(20);
                 });
     }
 
     @Test
-    void listActiveCustomers_shouldReturn200_withEmptyArray_whenNoActiveCustomers() {
+    void listActiveCustomers_shouldReturn200_withEmptyPage_whenNoActiveCustomers() {
         r2dbcRepository.save(new CustomerEntity(null, "Maria", "Gomez", "INACTIVE", 20)).block();
 
         webTestClient.get()
                 .uri("/api/v1/customers/active")
                 .exchange()
                 .expectStatus().isOk()
-                .expectBodyList(CustomerResponseDTO.class)
-                .hasSize(0);
+                .expectBody()
+                .jsonPath("$.totalElements").isEqualTo(0)
+                .jsonPath("$.content").isArray();
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void listActiveCustomers_shouldReturn200_withPaginatedResults() {
+        for (int i = 1; i <= 5; i++) {
+            r2dbcRepository.save(new CustomerEntity(null, "Customer" + i, "Last" + i, "ACTIVE", 20 + i)).block();
+        }
+
+        webTestClient.get()
+                .uri("/api/v1/customers/active?page=0&size=2")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(PageResponse.class)
+                .value(page -> {
+                    assertThat(page.totalElements()).isEqualTo(5L);
+                    assertThat(page.content()).hasSize(2);
+                    assertThat(page.totalPages()).isEqualTo(3);
+                    assertThat(page.last()).isFalse();
+                });
     }
 
     // ── GET /api/v1/customers/{id} ───────────────────────────────────────────

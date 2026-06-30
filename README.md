@@ -137,7 +137,7 @@ Base path: `/api/v1/customers`
 | Method | Route | Description | Responses |
 |---|---|---|---|
 | `POST` | `/` | Create customer | `201`, `400`, `422` |
-| `GET` | `/active` | List active customers | `200` |
+| `GET` | `/active?page=0&size=20` | List active customers (paginated) | `200` |
 | `GET` | `/{id}` | Find by ID | `200`, `404` |
 | `PUT` | `/{id}` | Full update | `200`, `400`, `404`, `422` |
 | `DELETE` | `/{id}` | Delete customer | `204`, `404` |

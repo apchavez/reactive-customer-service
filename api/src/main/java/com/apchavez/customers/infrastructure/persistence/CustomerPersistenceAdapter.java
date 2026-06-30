@@ -5,6 +5,7 @@ import com.apchavez.customers.domain.model.Customer;
 import com.apchavez.customers.domain.model.CustomerState;
 import com.apchavez.customers.domain.port.CustomerRepositoryPort;
 import com.apchavez.customers.infrastructure.mapper.CustomerMapper;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.r2dbc.core.R2dbcEntityTemplate;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
@@ -45,9 +46,14 @@ public class CustomerPersistenceAdapter implements CustomerRepositoryPort {
     }
 
     @Override
-    public Flux<Customer> findAllActive() {
-        return r2dbcRepository.findAllByEstado(CustomerState.ACTIVE.name())
+    public Flux<Customer> findAllActive(int page, int size) {
+        return r2dbcRepository.findAllByEstado(CustomerState.ACTIVE.name(), PageRequest.of(page, size))
                 .map(mapper::toDomain);
+    }
+
+    @Override
+    public Mono<Long> countActive() {
+        return r2dbcRepository.countByEstado(CustomerState.ACTIVE.name());
     }
 
     @Override

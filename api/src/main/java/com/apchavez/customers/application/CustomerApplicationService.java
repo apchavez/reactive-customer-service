@@ -49,9 +49,13 @@ public class CustomerApplicationService {
         });
     }
 
-    public Flux<Customer> listActiveCustomers() {
-        log.debug("Listar clientes activos");
-        return domainService.listActiveCustomers();
+    public Flux<Customer> listActiveCustomers(int page, int size) {
+        log.debug("Listar clientes activos — página={}, tamaño={}", page, size);
+        return domainService.listActiveCustomers(page, size);
+    }
+
+    public Mono<Long> countActiveCustomers() {
+        return domainService.countActiveCustomers();
     }
 
     @Transactional

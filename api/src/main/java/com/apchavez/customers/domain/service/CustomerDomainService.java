@@ -23,8 +23,12 @@ public class CustomerDomainService {
                 .switchIfEmpty(Mono.error(new ClienteNoEncontradoException(id)));
     }
 
-    public Flux<Customer> listActiveCustomers() {
-        return repositoryPort.findAllActive();
+    public Flux<Customer> listActiveCustomers(int page, int size) {
+        return repositoryPort.findAllActive(page, size);
+    }
+
+    public Mono<Long> countActiveCustomers() {
+        return repositoryPort.countActive();
     }
 
     public Mono<Customer> updateCustomer(Integer id, Customer updatedData) {

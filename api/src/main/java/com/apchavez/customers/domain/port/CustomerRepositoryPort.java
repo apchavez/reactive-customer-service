@@ -8,6 +8,7 @@ public interface CustomerRepositoryPort {
     Mono<Customer> save(Customer customer);
     Mono<Customer> update(Customer customer);
     Mono<Customer> findById(Integer id);
-    Flux<Customer> findAllActive();
+    Flux<Customer> findAllActive(int page, int size);
+    Mono<Long> countActive();
     Mono<Void> delete(Integer id);
 }

@@ -5,6 +5,7 @@ import com.apchavez.customers.infrastructure.mapper.CustomerMapper;
 import com.apchavez.customers.infrastructure.web.dto.CustomerRequestDTO;
 import com.apchavez.customers.infrastructure.web.dto.CustomerResponseDTO;
 import com.apchavez.customers.infrastructure.web.dto.CustomerUpdateRequestDTO;
+import com.apchavez.customers.infrastructure.web.dto.PageResponse;
 import com.apchavez.customers.infrastructure.web.exception.ErrorResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -13,7 +14,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -24,8 +27,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Validated
@@ -59,13 +62,19 @@ public class CustomerController {
     }
 
     @GetMapping("/active")
-    @Operation(summary = "Listar clientes activos", description = "Retorna todos los clientes con estado ACTIVE.")
+    @Operation(summary = "Listar clientes activos", description = "Retorna clientes con estado ACTIVE. Paginado con page (0-based) y size (max 100).")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "Lista de clientes activos (vacía si no hay ninguno)")
+            @ApiResponse(responseCode = "200", description = "Página de clientes activos")
     })
-    public Flux<CustomerResponseDTO> listActiveCustomers() {
-        return applicationService.listActiveCustomers()
-                .map(mapper::toResponseDTO);
+    public Mono<PageResponse<CustomerResponseDTO>> listActiveCustomers(
+            @RequestParam(defaultValue = "0") @PositiveOrZero int page,
+            @RequestParam(defaultValue = "20") @Positive @Max(100) int size) {
+        return Mono.zip(
+                applicationService.countActiveCustomers(),
+                applicationService.listActiveCustomers(page, size)
+                        .map(mapper::toResponseDTO)
+                        .collectList()
+        ).map(tuple -> PageResponse.of(tuple.getT2(), page, size, tuple.getT1()));
     }
 
     @GetMapping("/{id}")
