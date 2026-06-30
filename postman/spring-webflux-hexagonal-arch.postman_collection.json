@@ -2,7 +2,7 @@
   "info": {
     "name": "Customer Service API — Spring WebFlux",
     "_postman_id": "3e66f4b2-9d57-4fd8-a6e3-c1dc3f2e6a10",
-    "description": "Colección para probar la API REST reactiva de Customer Service (Spring Boot WebFlux). Base path: /api/v1/customers\n\nUsar junto con uno de los environments incluidos en postman/:\n- reactive-customer-service.local.postman_environment.json  → local (H2)\n- reactive-customer-service.k8s.postman_environment.json    → Kubernetes (PostgreSQL)",
+    "description": "Colección para probar la API REST reactiva de Customer Service (Spring Boot WebFlux). Base path: /api/v1/customers\n\nUsar junto con uno de los environments incluidos en postman/:\n- spring-webflux-hexagonal-arch.local.postman_environment.json  → local (H2)\n- spring-webflux-hexagonal-arch.k8s.postman_environment.json    → Kubernetes (PostgreSQL)",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -278,6 +278,213 @@
               "path": ["api", "v1", "customers", "99999"]
             },
             "description": "Intenta buscar un cliente inexistente. Retorna 404 Not Found."
+          },
+          "response": []
+        },
+        {
+          "name": "GET Buscar cliente por ID — 400 ID Inválido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Body contiene status 400', () => {",
+                  "    pm.expect(pm.response.json().status).to.eql(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "0"]
+            },
+            "description": "ID 0 viola la restricción @Positive — debe retornar 400 Bad Request."
+          },
+          "response": []
+        },
+        {
+          "name": "PUT Actualizar cliente — 200 OK",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('ID en respuesta coincide', () => {",
+                  "    const id = parseInt(pm.collectionVariables.get('customerId'));",
+                  "    pm.expect(pm.response.json().id).to.eql(id);",
+                  "});",
+                  "pm.test('Nombre actualizado correctamente', () => {",
+                  "    pm.expect(pm.response.json().nombre).to.eql('Alex Updated');",
+                  "});",
+                  "pm.test('Estado actualizado correctamente', () => {",
+                  "    pm.expect(pm.response.json().estado).to.eql('INACTIVE');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Alex Updated\",\n  \"apellido\": \"Prieto\",\n  \"estado\": \"INACTIVE\",\n  \"edad\": 31\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/{{customerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "{{customerId}}"]
+            },
+            "description": "Reemplaza todos los campos del cliente. Requiere ejecutar 'POST Crear cliente' antes."
+          },
+          "response": []
+        },
+        {
+          "name": "PUT Actualizar cliente — 400 Validación de campos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Body contiene array de errores', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.status).to.eql(400);",
+                  "    pm.expect(body.errores).to.be.an('array').and.not.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"\",\n  \"apellido\": \"\",\n  \"estado\": \"INVALIDO\",\n  \"edad\": 0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/{{customerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "{{customerId}}"]
+            },
+            "description": "Envía campos inválidos en el update — Bean Validation retorna 400."
+          },
+          "response": []
+        },
+        {
+          "name": "PUT Actualizar cliente — 404 Not Found",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404 Not Found', () => pm.response.to.have.status(404));",
+                  "pm.test('Body contiene status 404', () => {",
+                  "    pm.expect(pm.response.json().status).to.eql(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"No Existe\",\n  \"apellido\": \"Cliente\",\n  \"estado\": \"ACTIVE\",\n  \"edad\": 25\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/99999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "99999"]
+            },
+            "description": "Intenta actualizar un cliente inexistente. Retorna 404 Not Found."
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE Eliminar cliente — 204 No Content",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204 No Content', () => pm.response.to.have.status(204));",
+                  "pm.test('Body vacío', () => {",
+                  "    pm.expect(pm.response.text()).to.eql('');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/{{customerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "{{customerId}}"]
+            },
+            "description": "Elimina el cliente creado por 'POST Crear cliente'. Requiere ejecutar ese request antes."
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE Eliminar cliente — 404 Not Found",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404 Not Found', () => pm.response.to.have.status(404));",
+                  "pm.test('Body contiene status 404', () => {",
+                  "    pm.expect(pm.response.json().status).to.eql(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/99999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "99999"]
+            },
+            "description": "Intenta eliminar un cliente inexistente. Retorna 404 Not Found."
           },
           "response": []
         }
