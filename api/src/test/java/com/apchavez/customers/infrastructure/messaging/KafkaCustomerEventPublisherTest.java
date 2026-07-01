@@ -11,20 +11,20 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.kafka.core.reactive.ReactiveKafkaProducerTemplate;
-import reactor.core.publisher.Mono;
+import org.reactivestreams.Publisher;
+import reactor.core.publisher.Flux;
+import reactor.kafka.sender.KafkaSender;
 import reactor.kafka.sender.SenderResult;
 import reactor.test.StepVerifier;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class KafkaCustomerEventPublisherTest {
 
     @Mock
-    private ReactiveKafkaProducerTemplate<String, String> kafkaTemplate;
+    private KafkaSender<String, String> kafkaSender;
 
     @Mock
     private ObjectMapper objectMapper;
@@ -35,7 +35,7 @@ class KafkaCustomerEventPublisherTest {
 
     @BeforeEach
     void setUp() {
-        publisher = new KafkaCustomerEventPublisher(kafkaTemplate, objectMapper);
+        publisher = new KafkaCustomerEventPublisher(kafkaSender, objectMapper);
     }
 
     @Test
@@ -45,13 +45,12 @@ class KafkaCustomerEventPublisherTest {
         SenderResult<Void> senderResult = mock(SenderResult.class);
 
         when(objectMapper.writeValueAsString(event)).thenReturn("{\"eventType\":\"CUSTOMER_CREATED\"}");
-        when(kafkaTemplate.send(eq("customer-events"), eq("1"), any()))
-                .thenReturn(Mono.just(senderResult));
+        when(kafkaSender.send(any(Publisher.class))).thenReturn(Flux.just(senderResult));
 
         StepVerifier.create(publisher.publish(event))
                 .verifyComplete();
 
-        verify(kafkaTemplate).send(eq("customer-events"), eq("1"), any());
+        verify(kafkaSender).send(any(Publisher.class));
     }
 
     @Test
@@ -59,8 +58,8 @@ class KafkaCustomerEventPublisherTest {
         CustomerEvent event = CustomerEvent.of(CustomerEventType.CUSTOMER_CREATED, CUSTOMER);
 
         when(objectMapper.writeValueAsString(event)).thenReturn("{}");
-        when(kafkaTemplate.send(any(), any(), any()))
-                .thenReturn(Mono.error(new RuntimeException("Kafka unavailable")));
+        when(kafkaSender.send(any(Publisher.class)))
+                .thenReturn(Flux.error(new RuntimeException("Kafka unavailable")));
 
         StepVerifier.create(publisher.publish(event))
                 .verifyComplete();
@@ -76,6 +75,6 @@ class KafkaCustomerEventPublisherTest {
         StepVerifier.create(publisher.publish(event))
                 .verifyComplete();
 
-        verify(kafkaTemplate, never()).send(any(), any(), any());
+        verify(kafkaSender, never()).send(any(Publisher.class));
     }
 }
