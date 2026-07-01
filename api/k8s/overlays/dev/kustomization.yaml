@@ -1,0 +1,20 @@
+# Usage: kubectl apply -k api/k8s/overlays/dev
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../../base
+
+# Pin image — replace sha-XXXXXXX with the actual commit SHA tag from CI
+images:
+  - name: ghcr.io/apchavez/spring-angular-fullstack-k8s-api
+    newTag: latest
+
+patches:
+  - patch: |-
+      - op: replace
+        path: /spec/replicas
+        value: 1
+    target:
+      kind: Deployment
+      name: customer-service

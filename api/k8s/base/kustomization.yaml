@@ -1,0 +1,20 @@
+# Usage: kubectl apply -k api/k8s/base
+# Or use an overlay: kubectl apply -k api/k8s/overlays/dev
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - ../namespace.yaml
+  - ../secret.yaml
+  - ../configmap.yaml
+  - ../deployment.yaml
+  - ../service.yaml
+  - ../ingress.yaml
+  - ../hpa.yaml
+  - ../network-policy.yaml
+  - ../kafka-secret.yaml
+  - ../kafka.yaml
+  - ../redis.yaml
+  - ../prometheus-rule.yaml
+  - ../grafana.yaml
+  - ../pdb.yaml

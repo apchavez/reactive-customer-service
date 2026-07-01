@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: customer-service-config
+  namespace: customer-service
+  labels:
+    app.kubernetes.io/name: customer-service
+data:
+  SPRING_PROFILES_ACTIVE: prod
+  DB_HOST: postgres-service
+  DB_PORT: "5432"
+  DB_NAME: customerdb
+  REDIS_HOST: redis-service
+  REDIS_PORT: "6379"
+  KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318/v1/traces
