@@ -15,7 +15,7 @@ jobs:
     name: API — Tests y cobertura
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Trivy vulnerability scan
         uses: aquasecurity/trivy-action@v0.36.0
@@ -92,7 +92,7 @@ jobs:
     name: Web — Tests Angular
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Configurar Node.js
         uses: actions/setup-node@v6
@@ -125,7 +125,7 @@ jobs:
     name: Validar manifests k8s
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Instalar kubeconform
         run: |
@@ -146,7 +146,7 @@ jobs:
       contents: write
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Configurar Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -196,7 +196,7 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Configurar Docker Buildx
         uses: docker/setup-buildx-action@v3
