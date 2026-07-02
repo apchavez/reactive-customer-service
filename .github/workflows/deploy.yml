@@ -1,0 +1,49 @@
+name: Deploy to Kubernetes
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [CI]
+    branches: [main]
+    types: [completed]
+
+jobs:
+  deploy:
+    name: Deploy to cluster
+    runs-on: ubuntu-latest
+    environment: production
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+       github.event.workflow_run.event == 'push')
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          ref: main
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v5
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Configure kubeconfig
+        run: |
+          mkdir -p $HOME/.kube
+          echo "${{ secrets.KUBECONFIG }}" > $HOME/.kube/config
+          chmod 600 $HOME/.kube/config
+
+      - name: Deploy with Helm
+        run: |
+          helm upgrade --install customer-service ./chart \
+            --namespace customer-service \
+            --create-namespace \
+            --set api.image.tag=latest \
+            --set secrets.dbUser=${{ secrets.DB_USER }} \
+            --set secrets.dbPassword=${{ secrets.DB_PASSWORD }} \
+            --set secrets.kafkaUser=${{ secrets.KAFKA_USER }} \
+            --set secrets.kafkaPassword=${{ secrets.KAFKA_PASSWORD }} \
+            --set secrets.redisPassword=${{ secrets.REDIS_PASSWORD }} \
+            --wait --timeout=120s

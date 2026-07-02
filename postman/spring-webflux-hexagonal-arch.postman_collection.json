@@ -1,0 +1,643 @@
+{
+  "info": {
+    "name": "Customer Service API — Spring WebFlux",
+    "_postman_id": "3e66f4b2-9d57-4fd8-a6e3-c1dc3f2e6a10",
+    "description": "Colección para probar la API REST reactiva de Customer Service (Spring Boot WebFlux). Base path: /api/v1/customers\n\nUsar junto con uno de los environments incluidos en postman/:\n- spring-webflux-hexagonal-arch.local.postman_environment.json  → local (H2)\n- spring-webflux-hexagonal-arch.k8s.postman_environment.json    → Kubernetes (PostgreSQL)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{adminToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "customerId",
+      "value": "",
+      "type": "string",
+      "description": "Se establece automáticamente al crear un cliente (POST sin id explícito)"
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "type": "string",
+      "description": "JWT RS256 con ROLE_ADMIN. Generar con JwtService.generateToken(\"test\", \"ADMIN\") y pegar aquí o en el environment."
+    }
+  ],
+  "item": [
+    {
+      "name": "Customers",
+      "item": [
+        {
+          "name": "POST Crear cliente — 201 Created",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('Response tiene id generado', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.id).to.be.a('number');",
+                  "    pm.collectionVariables.set('customerId', body.id);",
+                  "});",
+                  "pm.test('Campos de respuesta son correctos', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.nombre).to.eql('Alex');",
+                  "    pm.expect(body.apellido).to.eql('Prieto');",
+                  "    pm.expect(body.estado).to.eql('ACTIVE');",
+                  "    pm.expect(body.edad).to.eql(30);",
+                  "});",
+                  "pm.test('Content-Type es application/json', () => {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Alex\",\n  \"apellido\": \"Prieto\",\n  \"estado\": \"ACTIVE\",\n  \"edad\": 30\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers"]
+            },
+            "description": "Crea un nuevo cliente con ID autogenerado. Guarda el ID en la variable `customerId` para los siguientes requests."
+          },
+          "response": []
+        },
+        {
+          "name": "POST Crear cliente con ID explícito — 201 Created",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('ID en respuesta es el enviado', () => {",
+                  "    pm.expect(pm.response.json().id).to.eql(100);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 100,\n  \"nombre\": \"Juan\",\n  \"apellido\": \"García\",\n  \"estado\": \"INACTIVE\",\n  \"edad\": 45\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers"]
+            },
+            "description": "Crea un cliente proporcionando un ID explícito."
+          },
+          "response": []
+        },
+        {
+          "name": "POST Crear cliente — 409 ID Duplicado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 409 Conflict', () => pm.response.to.have.status(409));",
+                  "pm.test('Body contiene status 409', () => {",
+                  "    pm.expect(pm.response.json().status).to.eql(409);",
+                  "});",
+                  "pm.test('Body contiene mensaje de error', () => {",
+                  "    pm.expect(pm.response.json().mensaje).to.be.a('string').and.not.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": 100,\n  \"nombre\": \"Duplicado\",\n  \"apellido\": \"Conflicto\",\n  \"estado\": \"ACTIVE\",\n  \"edad\": 25\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers"]
+            },
+            "description": "Intenta crear un cliente con un ID ya existente. Requiere haber ejecutado 'POST con ID explícito' antes."
+          },
+          "response": []
+        },
+        {
+          "name": "POST Crear cliente — 400 Validación de campos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Body contiene array de errores', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.status).to.eql(400);",
+                  "    pm.expect(body.errores).to.be.an('array').and.not.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"\",\n  \"apellido\": \"\",\n  \"estado\": \"INVALIDO\",\n  \"edad\": -1\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers"]
+            },
+            "description": "Envía datos inválidos para verificar la validación de Bean Validation."
+          },
+          "response": []
+        },
+        {
+          "name": "GET Listar clientes activos — 200 OK (paginado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.test('Response tiene estructura de página', () => {",
+                  "    pm.expect(body).to.have.property('content').that.is.an('array');",
+                  "    pm.expect(body).to.have.property('page').that.is.a('number');",
+                  "    pm.expect(body).to.have.property('size').that.is.a('number');",
+                  "    pm.expect(body).to.have.property('totalElements').that.is.a('number');",
+                  "    pm.expect(body).to.have.property('totalPages').that.is.a('number');",
+                  "    pm.expect(body).to.have.property('last').that.is.a('boolean');",
+                  "});",
+                  "pm.test('Todos los clientes en content son ACTIVE', () => {",
+                  "    body.content.forEach(c => pm.expect(c.estado).to.eql('ACTIVE'));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/active?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "active"],
+              "query": [
+                { "key": "page", "value": "0", "description": "Página (0-based)" },
+                { "key": "size", "value": "20", "description": "Elementos por página (max 100)" }
+              ]
+            },
+            "description": "Retorna página de clientes con estado ACTIVE. Campos: content, page, size, totalElements, totalPages, last."
+          },
+          "response": []
+        },
+        {
+          "name": "GET Buscar cliente por ID — 200 OK",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('ID de respuesta coincide con el buscado', () => {",
+                  "    const id = parseInt(pm.collectionVariables.get('customerId'));",
+                  "    pm.expect(pm.response.json().id).to.eql(id);",
+                  "});",
+                  "pm.test('Response tiene todos los campos esperados', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body).to.have.all.keys('id', 'nombre', 'apellido', 'estado', 'edad');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/{{customerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "{{customerId}}"]
+            },
+            "description": "Busca el cliente cuyo ID fue guardado por 'POST Crear cliente'. Requiere ejecutar ese request antes."
+          },
+          "response": []
+        },
+        {
+          "name": "GET Buscar cliente por ID — 404 Not Found",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404 Not Found', () => pm.response.to.have.status(404));",
+                  "pm.test('Body contiene status 404', () => {",
+                  "    pm.expect(pm.response.json().status).to.eql(404);",
+                  "});",
+                  "pm.test('Body contiene mensaje de error', () => {",
+                  "    pm.expect(pm.response.json().mensaje).to.be.a('string').and.not.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/99999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "99999"]
+            },
+            "description": "Intenta buscar un cliente inexistente. Retorna 404 Not Found."
+          },
+          "response": []
+        },
+        {
+          "name": "GET Buscar cliente por ID — 400 ID Inválido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Body contiene status 400', () => {",
+                  "    pm.expect(pm.response.json().status).to.eql(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/0",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "0"]
+            },
+            "description": "ID 0 viola la restricción @Positive — debe retornar 400 Bad Request."
+          },
+          "response": []
+        },
+        {
+          "name": "PUT Actualizar cliente — 200 OK",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('ID en respuesta coincide', () => {",
+                  "    const id = parseInt(pm.collectionVariables.get('customerId'));",
+                  "    pm.expect(pm.response.json().id).to.eql(id);",
+                  "});",
+                  "pm.test('Nombre actualizado correctamente', () => {",
+                  "    pm.expect(pm.response.json().nombre).to.eql('Alex Updated');",
+                  "});",
+                  "pm.test('Estado actualizado correctamente', () => {",
+                  "    pm.expect(pm.response.json().estado).to.eql('INACTIVE');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Alex Updated\",\n  \"apellido\": \"Prieto\",\n  \"estado\": \"INACTIVE\",\n  \"edad\": 31\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/{{customerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "{{customerId}}"]
+            },
+            "description": "Reemplaza todos los campos del cliente. Requiere ejecutar 'POST Crear cliente' antes."
+          },
+          "response": []
+        },
+        {
+          "name": "PUT Actualizar cliente — 400 Validación de campos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400 Bad Request', () => pm.response.to.have.status(400));",
+                  "pm.test('Body contiene array de errores', () => {",
+                  "    const body = pm.response.json();",
+                  "    pm.expect(body.status).to.eql(400);",
+                  "    pm.expect(body.errores).to.be.an('array').and.not.empty;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"\",\n  \"apellido\": \"\",\n  \"estado\": \"INVALIDO\",\n  \"edad\": 0\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/{{customerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "{{customerId}}"]
+            },
+            "description": "Envía campos inválidos en el update — Bean Validation retorna 400."
+          },
+          "response": []
+        },
+        {
+          "name": "PUT Actualizar cliente — 404 Not Found",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404 Not Found', () => pm.response.to.have.status(404));",
+                  "pm.test('Body contiene status 404', () => {",
+                  "    pm.expect(pm.response.json().status).to.eql(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"No Existe\",\n  \"apellido\": \"Cliente\",\n  \"estado\": \"ACTIVE\",\n  \"edad\": 25\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/99999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "99999"]
+            },
+            "description": "Intenta actualizar un cliente inexistente. Retorna 404 Not Found."
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE Eliminar cliente — 204 No Content",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204 No Content', () => pm.response.to.have.status(204));",
+                  "pm.test('Body vacío', () => {",
+                  "    pm.expect(pm.response.text()).to.eql('');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/{{customerId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "{{customerId}}"]
+            },
+            "description": "Elimina el cliente creado por 'POST Crear cliente'. Requiere ejecutar ese request antes."
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE Eliminar cliente — 404 Not Found",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 404 Not Found', () => pm.response.to.have.status(404));",
+                  "pm.test('Body contiene status 404', () => {",
+                  "    pm.expect(pm.response.json().status).to.eql(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/customers/99999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "customers", "99999"]
+            },
+            "description": "Intenta eliminar un cliente inexistente. Retorna 404 Not Found."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Actuator",
+      "item": [
+        {
+          "name": "GET Health — 200 UP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Health status es UP', () => {",
+                  "    pm.expect(pm.response.json().status).to.eql('UP');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["actuator", "health"]
+            },
+            "description": "Verifica el estado general de la aplicación (liveness/readiness probes en k8s)."
+          },
+          "response": []
+        },
+        {
+          "name": "GET Liveness Probe — 200 UP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Liveness status es UP', () => {",
+                  "    pm.expect(pm.response.json().status).to.eql('UP');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/health/liveness",
+              "host": ["{{baseUrl}}"],
+              "path": ["actuator", "health", "liveness"]
+            },
+            "description": "Kubernetes liveness probe. Si devuelve DOWN, k8s reinicia el pod."
+          },
+          "response": []
+        },
+        {
+          "name": "GET Readiness Probe — 200 UP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Readiness status es UP', () => {",
+                  "    pm.expect(pm.response.json().status).to.eql('UP');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/health/readiness",
+              "host": ["{{baseUrl}}"],
+              "path": ["actuator", "health", "readiness"]
+            },
+            "description": "Kubernetes readiness probe. Si devuelve DOWN, k8s deja de enrutar tráfico al pod."
+          },
+          "response": []
+        },
+        {
+          "name": "GET Prometheus Metrics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 OK', () => pm.response.to.have.status(200));",
+                  "pm.test('Content-Type es text/plain', () => {",
+                  "    pm.expect(pm.response.headers.get('Content-Type')).to.include('text/plain');",
+                  "});",
+                  "pm.test('Response contiene métricas JVM', () => {",
+                  "    pm.expect(pm.response.text()).to.include('jvm_memory_used_bytes');",
+                  "});",
+                  "pm.test('Response contiene métricas HTTP', () => {",
+                  "    pm.expect(pm.response.text()).to.include('http_server_requests_seconds');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/actuator/prometheus",
+              "host": ["{{baseUrl}}"],
+              "path": ["actuator", "prometheus"]
+            },
+            "description": "Expone métricas en formato Prometheus (text/plain). Incluye métricas JVM, HTTP request rate/latency y métricas de Spring WebFlux. Scrapeado automáticamente por Prometheus en K8s vía anotaciones en el pod."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

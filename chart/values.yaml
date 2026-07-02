@@ -1,0 +1,48 @@
+nameOverride: ""
+
+api:
+  image:
+    repository: ghcr.io/apchavez/spring-angular-fullstack-k8s-api
+    tag: ""
+    pullPolicy: Always
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 250m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+config:
+  springProfile: prod
+  db:
+    host: postgres-service
+    port: "5432"
+    name: customerdb
+  redis:
+    host: redis-service
+    port: "6379"
+  kafka:
+    bootstrapServers: kafka:9092
+  otel:
+    endpoint: http://otel-collector:4318/v1/traces
+
+secrets:
+  dbUser: ""
+  dbPassword: ""
+  kafkaUser: customer-service
+  kafkaPassword: ""
+  redisPassword: ""
+
+ingress:
+  host: customer-service.local
+
+hpa:
+  minReplicas: 2
+  maxReplicas: 10
+  cpuUtilization: 70
+  memoryUtilization: 80
+
+monitoring:
+  enabled: true
